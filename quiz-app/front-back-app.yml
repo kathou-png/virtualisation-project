@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-prod-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quiz-prod-ui
+  template:
+    metadata:
+      labels:
+        app: quiz-prod-ui
+    spec:
+      containers:
+      - name: front-end-container
+        image: cathytrg/quiz-prod-ui
+        imagePullPolicy: Always
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-prod-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quiz-prod-api
+  template:
+    metadata:
+      labels:
+        app: quiz-prod-api
+    spec:
+      containers:
+        - name: back-end-container
+          image: cathytrg/quiz-prod-api
+          imagePullPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: quiz-prod-ui-service
+spec:
+  ports:
+    - name: http
+      targetPort: 8080
+      port: 80
+  type: NodePort
+  selector:
+    app: quiz-prod-ui
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: quiz-prod-api-service
+spec:
+  ports:
+    - name: http
+      targetPort: 8080
+      port: 80
+  type: ClusterIP
+  selector:
+    app: quiz-prod-api
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: quiz-prod-ui-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: quiz-prod-ui.localhost
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: quiz-prod-ui-service
+              servicePort: http
